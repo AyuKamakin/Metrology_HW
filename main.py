@@ -1,10 +1,10 @@
-import numpy as np
 from scipy.stats import t
 import pandas as pd
 import numpy as np
 from scipy.stats import kurtosis, skew
 import math
 import random
+import matplotlib.pyplot as plt
 
 
 def avg_square_etc(content):
@@ -208,3 +208,16 @@ if __name__ == '__main__':
     print(f"Эксцесс: {excess}")
     print(f"Контрэксцесс: {contr_excess}")
     print(f"Ассиметрия: {assimetry}")
+
+    data = sorted(content)
+
+    # Построение гистограммы
+    plt.hist(data, bins=20, edgecolor='black')  # Пример: 20 бинов
+
+    # Настройка графика
+    plt.xlabel('Значения')
+    plt.ylabel('Частота')
+    plt.title('Гистограмма распределения')
+
+    # Отображение гистограммы
+    plt.show()
