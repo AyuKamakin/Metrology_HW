@@ -182,15 +182,12 @@ if __name__ == '__main__':
     number_of_freedoms = len(content) - 1
     print(f'Размер выборки: {len(content)}')
     mean, S, Sx = avg_square_etc(content)
-    check_1 = check_grubbs_max(content, S, grubbs_criteries, mean)
-    while (check_1):
+    while check_grubbs_max(content, S, grubbs_criteries, mean):
         print(
             f'Обнаружен выброс максимального значения ({max(content)}) по критерию Граббса, удаляем значение и пересчитываем параметры выборки')
         content.remove(max(content))
         mean, S, Sx = avg_square_etc(content)
-
-    check_2 = check_grubbs_min(content, S, grubbs_criteries, mean)
-    while (check_2):
+    while check_grubbs_min(content, S, grubbs_criteries, mean):
         print(
             f'Обнаружен выброс минимального значения ({min(content)}) по критерию Граббса, удаляем значение и пересчитываем параметры выборки')
         content.remove(min(content))
