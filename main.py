@@ -125,7 +125,6 @@ def find_excess_and_etc(content, S):
     excess = kurtosis(content) + 3
     assimetry = skew(content)
     mean = np.mean(content)
-    fourth_moment = np.mean((content - mean) ** 4)
     contr_excess = 1/(excess**0.5)
     return excess, contr_excess, assimetry
 
