@@ -1,4 +1,4 @@
-from scipy.stats import t
+from scipy.stats import t, chi2_contingency, chi2, chisquare, norm
 import pandas as pd
 import numpy as np
 from scipy.stats import kurtosis, skew
@@ -90,9 +90,15 @@ def check_normality_big_nums(content, S, criteries):
         Si.append(np.std(i))
     midpoints = find_midpoints(small_arrays)
     ni = []
-    for i in small_arrays:
+    '''for i in small_arrays:
         res = lengths[small_arrays.index(i)] * h * Si[small_arrays.index(i)]
         fi = (midpoints[small_arrays.index(i)] - means[small_arrays.index(i)]) / Si[small_arrays.index(i)]
+        dens = normal_density_in_context(fi)
+        res = res * fi
+        ni.append(res)'''
+    for i in small_arrays:
+        res = lengths[small_arrays.index(i)] * h * S
+        fi = (midpoints[small_arrays.index(i)] - mean) / S
         dens = normal_density_in_context(fi)
         res = res * fi
         ni.append(res)
@@ -116,11 +122,11 @@ def find_midpoints(arrays):
 
 
 def find_excess_and_etc(content, S):
-    excess = kurtosis(content)
+    excess = kurtosis(content) + 3
     assimetry = skew(content)
     mean = np.mean(content)
     fourth_moment = np.mean((content - mean) ** 4)
-    contr_excess = (fourth_moment / S ** 4) - 3
+    contr_excess = 1/(excess**0.5)
     return excess, contr_excess, assimetry
 
 
@@ -156,11 +162,12 @@ def read_table(filename):
 
 
 # считывание выборки из текстового файла
-def read_chosen_nums():
-    f = open('input.txt', 'r')
+def read_chosen_nums(filename):
+    f = open(filename+'.txt', 'r')
     content = []
     for i in f.readlines():
-        content.append(float(i[:-2].replace(',', '.')))
+        if i!='' and i!='\n' and i!=' \n':
+            content.append(float(i[:-2].replace(',', '.')))
     f.close()
     return content
 
@@ -177,7 +184,7 @@ def read_two_coeff(filename):
 
 
 if __name__ == '__main__':
-    content = read_chosen_nums()
+    content = read_chosen_nums('input')
     grubbs_criteries = read_table('граббс')
     number_of_freedoms = len(content) - 1
     print(f'Размер выборки: {len(content)}')
@@ -206,15 +213,16 @@ if __name__ == '__main__':
     print(f"Контрэксцесс: {contr_excess}")
     print(f"Ассиметрия: {assimetry}")
 
-    data = sorted(content)
+    data=content
+    plt.hist(data, bins='auto', density=True, alpha=0.7, color='g')
+    mu, std = np.mean(data), np.std(data)
+    observed_freq, bin_edges = np.histogram(data, bins='auto')
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2  # Центры бинов
+    expected_freq = norm.pdf(bin_centers, mu, std) * len(data)
+    mu, std = np.mean(data), np.std(data)
+    xmin, xmax = plt.xlim()
+    x = np.linspace(xmin, xmax, 100)
+    p = np.exp(-(x - mu) ** 2 / (2 * std ** 2)) / (std * np.sqrt(2 * np.pi))
+    plt.plot(x, p, 'k', linewidth=2)
 
-    # Построение гистограммы
-    plt.hist(data, bins=20, edgecolor='black')  # Пример: 20 бинов
-
-    # Настройка графика
-    plt.xlabel('Значения')
-    plt.ylabel('Частота')
-    plt.title('Гистограмма распределения')
-
-    # Отображение гистограммы
     plt.show()
