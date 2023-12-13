@@ -1,6 +1,8 @@
+import warnings
+
 import seaborn as sns
 from scipy.stats import t, chi2_contingency, chi2, chisquare, norm, shapiro, kstest, anderson, probplot, normaltest, \
-    expon, logistic, uniform
+    expon, logistic, uniform, triang, laplace
 import pandas as pd
 import numpy as np
 from scipy.stats import kurtosis, skew
@@ -153,83 +155,123 @@ def split_array_by_range(content, max_range):
         result[-2].append(result[-1][0])
         result.remove(result[-1])
     return result
-def others_check(sample_data):
+def others_check(sample_data, distributions_d, cexcess, mean):
     alpha=0.05
-    # Сравнение с экспоненциальным распределением
-    ks_stat_exp, p_value_exp = kstest(sample_data, expon.cdf)
-    if p_value_exp > alpha:
-        print('Выборка похожа на экспоненциальное распределение по критерию Колмогорова-Смирнова.')
-    else:
-        print('Выборка не похожа на экспоненциальное распределение по критерию Колмогорова-Смирнова.')
-
+    print('\n')
     # Сравнение с равномерным распределением
     ks_stat_uniform, p_value_uniform = kstest(sample_data, uniform.cdf)
     if p_value_uniform > alpha:
         print('Выборка похожа на равномерное распределение по критерию Колмогорова-Смирнова.')
+        print(f'Контрэксцесс выборки: {cexcess}, контрэксцесс распределения: {distributions_d["Равномерное"]}')
+        calculate_confidence_interval(mean,sample_data,'uniform')
     else:
         print('Выборка не похожа на равномерное распределение по критерию Колмогорова-Смирнова.')
 
-    # Сравнение с логистическим распределением
-    ks_stat_logistic, p_value_logistic = kstest(sample_data, logistic.cdf)
-    if p_value_logistic > alpha:
-        print('Выборка похожа на логистическое распределение по критерию Колмогорова-Смирнова.')
-    else:
-        print('Выборка не похожа на логистическое распределение по критерию Колмогорова-Смирнова.')
+    #Сравнение с гамма распределением
     a, loc, scale = gamma.fit(sample_data)
     ks_stat_gamma, p_value_gamma = kstest(sample_data, gamma(a, loc=loc, scale=scale).cdf)
     if p_value_gamma > alpha:
         print('Выборка похожа на гамма-распределение по критерию Колмогорова-Смирнова.')
+        print(f'Контрэксцесс выборки: {cexcess}, контрэксцесс распределения: {distributions_d["Гамма"]}')
+        calculate_confidence_interval(mean,sample_data,'gamma')
     else:
         print('Выборка не похожа на гамма-распределение по критерию Колмогорова-Смирнова.')
 
-    # Сравнение с распределением хи-квадрат
-    df_chi2, loc_chi2, scale_chi2 = chi2.fit(sample_data)
-    ks_stat_chi2, p_value_chi2 = kstest(sample_data, chi2(df_chi2, loc=loc_chi2, scale=scale_chi2).cdf)
-    if p_value_chi2 > alpha:
-        print('Выборка похожа на распределение хи-квадрат по критерию Колмогорова-Смирнова.')
+    #Сравнение с треугольным распределением
+    params_tri = (np.min(sample_data), np.mean(sample_data), np.max(sample_data))
+    ks_stat_tri, p_value_tri = kstest(sample_data, triang.cdf, args=params_tri)
+    if p_value_tri > alpha:
+        print('Выборка похожа на треугольное распределение по критерию Колмогорова-Смирнова.')
+        print(f'Контрэксцесс выборки: {cexcess}, контрэксцесс распределения: {distributions_d["Треугольное"]}')
+        calculate_confidence_interval(mean,sample_data,'triangular')
     else:
-        print('Выборка не похожа на распределение хи-квадрат по критерию Колмогорова-Смирнова.')
+        print('Выборка не похожа на треугольное распределение по критерию Колмогорова-Смирнова.')
 
-    # Сравнение с распределением Стьюдента
-    df_t, loc_t, scale_t = t.fit(sample_data)
-    ks_stat_t, p_value_t = kstest(sample_data, t(df_t, loc=loc_t, scale=scale_t).cdf)
-    if p_value_t > alpha:
-        print('Выборка похожа на распределение Стьюдента по критерию Колмогорова-Смирнова.')
+    #Сравнение с лапласа распределением
+    loc_laplace, scale_laplace = laplace.fit(sample_data)
+    ks_stat_laplace, p_value_laplace = kstest(sample_data, laplace(loc=loc_laplace, scale=scale_laplace).cdf)
+    if p_value_laplace > alpha:
+        print('Выборка похожа на лапласовское распределение по критерию Колмогорова-Смирнова.')
+        print(f'Контрэксцесс выборки: {cexcess}, контрэксцесс распределения: {distributions_d["Лапласово"]}')
+        calculate_confidence_interval(mean,sample_data,'laplace')
     else:
-        print('Выборка не похожа на распределение Стьюдента по критерию Колмогорова-Смирнова.')
+        print('Выборка не похожа на лапласовское распределение по критерию Колмогорова-Смирнова.')
 
-    plt.figure(figsize=(12, 8))
-    plt.subplot(2, 3, 1)
-    probplot(sample_data, dist=expon,sparams=(len(content)-1,), plot=plt)
-    plt.title('Сравнение с экспоненциальным распределением')
+    plt.figure(figsize=(20, 14))
 
-    # График сравнения с распределением Стьюдента
-    plt.subplot(2, 3, 2)
-    probplot(sample_data, dist=t, sparams=(len(content)-1,), plot=plt)
-    plt.title('Сравнение с распределением Стьюдента')
+    # Треугольное распределение
+    params_tri = (np.min(sample_data), np.mean(sample_data), np.max(sample_data))  # Используем минимум, среднее и максимум из выборки
+    tri_dist = triang(c=(params_tri[1] - params_tri[0]) / (params_tri[2] - params_tri[0]), loc=params_tri[0],
+                      scale=params_tri[2] - params_tri[0])
+    '''params_tri = (0, 1, 2 / 3)  # Параметры (loc, scale, c) треугольного распределения
+    tri_dist = triang(*params_tri)'''
 
-    # График сравнения с хи-квадрат распределением
-    plt.subplot(2, 3, 4)
-    probplot(sample_data, dist=chi2, sparams=(len(content)-1,), plot=plt)
-    plt.title('Сравнение с хи-квадрат распределением')
+    # Лапласово распределение
+    params_laplace = (np.mean(sample_data), np.std(sample_data))  # Используем среднее и стандартное отклонение из выборки
+    laplace_dist = laplace(*params_laplace)
+
+    # Равномерное распределение
+    params_uniform = (np.min(sample_data), np.max(sample_data))  # Используем минимум и максимум из выборки
+    uniform_dist = uniform(loc=params_uniform[0], scale=params_uniform[1] - params_uniform[0])
+    # Гамма-распределение
+    params_gamma = (np.mean(sample_data), np.std(sample_data))  # Используем среднее и стандартное отклонение из выборки
+    gamma_dist = gamma(a=params_gamma[0] ** 2 / params_gamma[1] ** 2, scale=params_gamma[1] ** 2 / params_gamma[0])
 
     # График сравнения с равномерным распределением
-    plt.subplot(2, 3, 3)
+    plt.subplot(2,4,5)
     probplot(sample_data, dist=uniform, sparams=(len(content)-1,), plot=plt)
     plt.title('Сравнение с равномерным распределением')
 
-    # График сравнения с равномерным распределением
-    plt.subplot(2, 3, 5)
+    # График сравнения с гамма распределением
+    plt.subplot(2,4,6)
     probplot(sample_data, dist=gamma, sparams=(len(content)-1,), plot=plt)
     plt.title('Сравнение с гамма распределением')
 
-    # График сравнения с равномерным распределением
-    plt.subplot(2, 3, 6)
-    probplot(sample_data, dist=logistic, sparams=(len(content) - 1,), plot=plt)
-    plt.title('Сравнение с логистическим распределением')
+    # График сравнения с лапласа распределением
+    plt.subplot(2,4,7)
+    probplot(sample_data, dist=laplace, sparams=(len(content) - 1,), plot=plt)
+    plt.title('Сравнение с лапласа распределением')
+
+
+    # Гистограммы
+    plt.subplot(2,4,4)
+    plt.hist(sample_data, bins='auto', density=True, alpha=0.7, color='g', label='Выборка')
+    x_tri = np.linspace(np.min(sample_data), np.max(sample_data), 1000)
+    plt.plot(x_tri, tri_dist.pdf(x_tri), 'r', label='Треугольное')
+    plt.title('Треугольное распределение')
+    plt.legend()
+
+    plt.subplot(2,4,3)
+    plt.hist(sample_data, bins='auto', density=True, alpha=0.7, color='b', label='Выборка')
+    x_laplace = np.linspace(np.min(sample_data), np.max(sample_data), 1000)
+    plt.plot(x_laplace, laplace_dist.pdf(x_laplace), 'r', label='Лапласово')
+    plt.title('Лапласово распределение')
+    plt.legend()
+
+    plt.subplot(2,4,1)
+    plt.hist(sample_data, bins='auto', density=True, alpha=0.7, color='purple', label='Выборка')
+    x_uniform = np.linspace(np.min(sample_data), np.max(sample_data), 1000)
+    plt.plot(x_uniform, uniform_dist.pdf(x_uniform), 'r', label='Равномерное')
+    plt.title('Равномерное распределение')
+    plt.legend()
+
+    plt.subplot(2,4,2)
+    plt.hist(sample_data, bins='auto', density=True, alpha=0.7, color='b', label='Выборка')
+    x_gamma = np.linspace(np.min(sample_data), np.max(sample_data), 1000)
+    plt.plot(x_gamma, gamma_dist.pdf(x_gamma), 'r', label='Гамма')
+    plt.title('Гамма-распределение')
+    plt.legend()
 
     plt.tight_layout()
     plt.show()
+def trust_borders_normal(data, Sx, t_student):
+    if len(data)-1>len(t_student):
+        epsilon = t_student[31] * Sx
+    else:
+        epsilon = t_student[len(data)-1]*Sx
+    K = epsilon/Sx
+    delta=K*Sx
+    return epsilon, delta
 def normality_check(data):
     statistic_shapiro, p_value_shapiro = shapiro(data)
     alpha = 0.05
@@ -306,11 +348,45 @@ def normality_check(data):
     # Отображение графиков
     plt.tight_layout()
     plt.show()
+    if count >= 3:
+        return True
+    else:
+        return False
 def read_table(filename):
     df = pd.read_excel(filename + '.xlsx')
     # Создание словаря из столбцов A и B
     coefficients_dict = dict(zip(df.iloc[:, 0], df.iloc[:, 1]))
     return coefficients_dict
+def calculate_confidence_interval(mean, sample, distribution, alpha=0.05):
+    if distribution == 'laplace':
+        median_sample = np.median(sample)
+        scale_laplace = median_sample, np.mean(np.abs(sample - median_sample))
+        # Вычисляем квантиль лапласовского распределения
+        q_laplace = laplace.ppf(1 - alpha / 2)
+        # Вычисляем погрешность, убеждаясь, что делитель не равен нулю
+        n = len(sample)
+        margin_of_error_laplace = q_laplace * (scale_laplace[0] / np.sqrt(n) if n > 0 else 1)
+        print(
+            f"Измеренное значение = {round(mean,6)} +- {round(margin_of_error_laplace,6)},\nпогрешность посчитана по квантилю лапласовского распределения\n")
+
+
+    elif distribution == 'uniform':
+        min_val, max_val = np.min(sample), np.max(sample)
+        q_uniform = uniform.ppf(1 - alpha / 2)
+        margin_of_error_uniform = q_uniform * (max_val - min_val) / (2 * np.sqrt(3) * np.sqrt(len(sample)))
+        print(f"Измеренное значение = {round(mean,6)} +- {round(margin_of_error_uniform,6)},\nпогрешность посчитана по квантилю равномерного распределения\n")
+
+    elif distribution == 'triangular':
+        scale_tri = (np.max(sample) - np.min(sample)) / np.sqrt(6)
+        q_triangular = triang.ppf(1 - alpha / 2, c=0.5)
+        margin_of_error_tri = q_triangular * (scale_tri / np.sqrt(len(sample)))
+        print(f"Измеренное значение = {round(mean,6)} +- {round(margin_of_error_tri,6)},\nпогрешность посчитана по квантилю равномерного распределения\n")
+
+    elif distribution == 'gamma':
+        a_gamma, loc_gamma, scale_gamma = gamma.fit(sample)
+        q_gamma = gamma.ppf(1 - alpha / 2, a_gamma, loc=loc_gamma, scale=scale_gamma)
+        margin_of_error_gamma = q_gamma - loc_gamma
+        print(f"Измеренное значение = {round(mean,6)} +- {round(margin_of_error_gamma,6)},\nпогрешность посчитана по квантилю равномерного распределения\n")
 
 
 # считывание выборки из текстового файла
@@ -333,10 +409,14 @@ def read_two_coeff(filename):
         index_key = int(row.iloc[0])
         coefficients_dict[index_key] = [float(row.iloc[2]), float(row.iloc[1])]
     return coefficients_dict
+def find_closest_distribution(variable, distribution_dict):
+    closest_value = min(distribution_dict.keys(), key=lambda x: abs(x - variable))
+    closest_distribution = distribution_dict[closest_value]
+    return closest_value, closest_distribution
 
 
 if __name__ == '__main__':
-    content = read_chosen_nums('input2')
+    content = read_chosen_nums('input3')
     grubbs_criteries = read_table('граббс')
     number_of_freedoms = len(content) - 1
     print(f'Размер выборки: {len(content)}')
@@ -353,7 +433,7 @@ if __name__ == '__main__':
         content.remove(min(content))
         mean, S, Sx = avg_square_etc(content)
     if old_len==len(content):
-        print("Выбросов по критерию Граббса не обнаружено")
+        print("Выбросов по критерию Граббса не обнаружено\n")
     '''if len(content) <= 50:
         d_criteries = read_two_coeff('квантили критерий 1')
         p_and_z_criteries = read_two_coeff('P для Z')
@@ -363,9 +443,30 @@ if __name__ == '__main__':
             print('Распределение не принадлежит нормальному')
     else:
         check_normality_big_nums(content, S, mean)'''
+    normal = normality_check(content)
+    t_student = read_table('СтьюдентГОСТ')
+    trust_orders, trust_borders_meas = trust_borders_normal(content, Sx, t_student)
+    print(f'По условиям задания считается, что НСП=0')
+    print(f'Доверительные границы случайной погрешности измеряемой величины: {trust_orders}\nДоверительные границы погрешности измеряемой величины: {trust_borders_meas} \n')
     excess, contr_excess, assimetry = find_excess_and_etc(content, S)
     print(f"Эксцесс: {excess}")
     print(f"Контрэксцесс: {contr_excess}")
     print(f"Ассиметрия: {assimetry}")
-    normality_check(content)
-    others_check(content)
+    normal = False
+    if not normal:
+        distribution_dict = {
+            0.408: 'Лапласово',
+            0.577: 'Нормальное',
+            0.745: 'Равномерное',
+            0.645: 'Треугольное',
+            0.000: 'Гамма'
+        }
+        flipped_dict = {v: k for k, v in distribution_dict.items()}
+        others_check(content, flipped_dict, contr_excess, mean)
+        print(f'Измеренное значение величины равно {round(mean, 6)} +- {round(trust_borders_meas, 6)}, P=0.05')
+        closest_value, closest_distribution = find_closest_distribution(contr_excess, distribution_dict)
+        print(
+            f"\nКоэксцесс выборки равен {contr_excess:.4f}, наиболее близок к коэкцессу {closest_value:.4f}, который имеет "
+            f"{closest_distribution} распределение.")
+    else:
+        print(f'\nИзмеренное значение величины: {round(mean, 6)}\nСреднеквадратическое отклонение среднего арифметического: {round(Sx,6)}\nРазмер выборки: {len(content)}\nНСП по условию равно нулю.')
