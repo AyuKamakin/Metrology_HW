@@ -285,64 +285,16 @@ def trust_borders_normal(data, Sx, t_student):
 
 
 def normality_check(data):
-    statistic_shapiro, p_value_shapiro = shapiro(data)
     alpha = 0.05
-    # Проверка нормальности с помощью критерия Андерсона-Дарлинга
-    result_anderson = anderson(data)
     # Проверка нормальности с помощью критерия Колмогорова-Смирнова
     statistic_ks, p_value_ks = kstest(data, 'norm')
-    # Проверка нормальности с помощью критерия Крамера-фон-Мизеса
-    result_cvm = cramervonmises(data, cdf='norm')
-    statistic_cvm, p_value_cvm = result_cvm.statistic, result_cvm.pvalue
-    # Тест на нормальность основанный на хи-квадрат Пирсона
-    statistic_test, p_value_test = normaltest(data)
-    # Критерий Харке-Бера
-    statistic_jb, p_value_jb = jarque_bera(data)
-
-    # print(f'Статистика критерия Харке-Бера: {statistic_jb:.4f}, p-value: {p_value_jb:.4f}\n \n')
-    #  print(f"Статистика теста, основанного на критерии хи-квадрат Пирсона: {statistic_test:.4f}, p-value: {p_value_test:.4f}")
-    #  print(f'Статистика критерия Крамера-фон-Мизеса:  {statistic_cvm:.4f}, p-value: {p_value_cvm:.4f}')
-    #  print(f'Статистика критерия Колмогорова-Смирнова: {statistic_ks:.4f}, p-value: {p_value_ks:.4f}')
-    # print(f'Статистика критерия Андерсона-Дарлинга: {result_anderson.statistic:.4f}, Critical Values: {result_anderson.critical_values}')
-    #  print(f'Статистика критерия Шапиро-Вилка: {statistic_shapiro:.4f}, p-value: {p_value_shapiro:.4f}')
-
-    count = 0
-    if p_value_shapiro > alpha:
-        print(
-            'Выборка согласуется с нормальным распределением по критерию Шапиро-Вилка,\nотклонений в центральной части не наблюдается')
-        count += 1
-    else:
-        print(
-            'Выборка не согласуется с нормальным распределением по критерию Шапиро-Вилка,\nнаблюдается отклонение в центральной части')
     if p_value_ks > alpha:
         print('Выборка согласуется с нормальным распределением по критерию Колмогорова-Смирнова.')
-        count += 1
+        return True
     else:
         print('Выборка не согласуется с нормальным распределением по критерию Колмогорова-Смирнова.')
-    if result_anderson.statistic < result_anderson.critical_values[2]:
-        print('Выборка согласуется с нормальным распределением по критерию Андерсона-Дарлинга.')
-        count += 1
-    else:
-        print('Выборка не согласуется с нормальным распределением по критерию Андерсона-Дарлинга.')
-    if p_value_cvm > alpha:
-        print('Выборка согласуется с нормальным распределением по критерию Крамера-фон-Мизеса.')
-        count += 1
-    else:
-        print('Выборка не согласуется с нормальным распределением по критерию Крамера-фон-Мизеса.')
-    if p_value_jb > alpha:
-        print('Выборка согласуется с нормальным распределением по критерию Харке-Бера.')
-        count += 1
-    else:
-        print('Выборка не согласуется с нормальным распределением по критерию Харке-Бера.')
-    if p_value_test > alpha:
-        print("Выборка согласуется с нормальным распределением по тесту, основанному на критерии Хи-квадрат Пирсона.")
-        count += 1
-    else:
-        print(
-            "Выборка не согласуется с нормальным распределением по тесту, основанному на критерии Хи-квадрат Пирсона.")
-    print(f'Выборка согласуется с нормальным распределением по {count} из 6 критериев. \n \n')
-
-    data = content
+        return False
+def normality_graphs(data):
     plt.figure(figsize=(12, 6))
     # Гистограмма
     plt.subplot(1, 2, 1)
@@ -362,10 +314,6 @@ def normality_check(data):
     # Отображение графиков
     plt.tight_layout()
     plt.show()
-    if count >= 3:
-        return True
-    else:
-        return False
 
 
 def read_table(filename):
@@ -470,8 +418,11 @@ if __name__ == '__main__':
             print('Распределение не принадлежит нормальному')
     else:
         xi_crit = read_table('хиКритерии')
-        normal= check_normality_big_nums(content, S, mean, xi_crit)
-    #normal = normality_check(content)
+        normal1= check_normality_big_nums(content, S, mean, xi_crit)
+        normal2 = normality_check(content)
+        if normal2 and normal1:
+            print("Критерии хи-квадрат и Колмогорова-Смирнова на нормальность пройдены")
+    normality_graphs(content)
     t_student = read_table('СтьюдентГОСТ')
     trust_orders, trust_borders_meas = trust_borders_normal(content, Sx, t_student)
     print(f'По условиям задания считается, что НСП=0')
@@ -481,7 +432,7 @@ if __name__ == '__main__':
     print(f"Эксцесс: {excess}")
     print(f"Контрэксцесс: {contr_excess}")
     print(f"Ассиметрия: {assimetry}")
-    normal = False
+    normal = True
     if not normal:
         distribution_dict = {
             0.408: 'Лапласово',
