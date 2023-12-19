@@ -560,7 +560,7 @@ if __name__ == "__main__":
         mean, S, Sx = avg_square_etc(content)
     if old_len == len(content):
         print("Выбросов по критерию Граббса не обнаружено\n")
-    if len(content) <= 50:
+    if 15 < len(content) <= 50:
         d_criteries = read_two_coeff("квантили критерий 1")
         p_criteries = read_two_coeff("P для Z")
         z_criterie = read_table("Z от P")
@@ -573,13 +573,16 @@ if __name__ == "__main__":
         else:
             normal = False
             print("Распределение не принадлежит нормальному")
-    else:
+    elif len(content) > 50:
         xi_crit = read_table("хиКритерии")
         normal1 = check_normality_big_nums(content, S, mean, xi_crit)
         normal2 = normality_check(content)
         if normal2 and normal1:
             print("Критерии хи-квадрат и Колмогорова-Смирнова на нормальность пройдены")
         normal = normal1 or normal2
+    else:
+        print("Выборка слишком малого размера, проверка на нормальность по ГОСТ не предполагается, проверим исключительно по критерию Колмогорова-Смирнова")
+        normal = normality_check(content)
     normality_graphs(content)
     t_student = read_table("СтьюдентГОСТ")
     trust_orders, trust_borders_meas = trust_borders_normal(content, Sx, t_student)
