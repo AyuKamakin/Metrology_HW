@@ -86,6 +86,7 @@ def check_second_critery(content, S, p_criteries, z_criteries):
     )
     return count <= p_criteries[len(content)][1]
 
+
 def check_normality_big_nums(content, S, mean, criteries):
     # полагается, что в выборке до тысячи элементов
     if len(content) <= 100:
@@ -132,18 +133,20 @@ def check_normality_big_nums(content, S, mean, criteries):
     while not (keys[k] < f <= keys[k + 1]):
         k += 1
     print(
-        f"Допустимое значение суммарного хи-квадрат для {r_def} интервалов, т.е. {f} степеней свободы составляет {criteries[keys[k+1]]}\nСуммарное значение хи-квадрат: {sum_xi}"
+        f"Допустимое значение суммарного хи-квадрат для {r_def} интервалов, т.е. {f} степеней свободы составляет {criteries[keys[k + 1]]}\nСуммарное значение хи-квадрат: {sum_xi}"
     )
-    if sum_xi<=criteries[keys[k+1]]:
+    if sum_xi <= criteries[keys[k + 1]]:
         print(
-            f'Сумма хи-квадрат {sum_xi} <= {criteries[keys[k+1]]} критерия, распределение похоже на нормальное по критерию Пирсона (ГОСТ)'
+            f'Сумма хи-квадрат {sum_xi} <= {criteries[keys[k + 1]]} критерия, распределение похоже на нормальное по критерию Пирсона (ГОСТ)'
         )
         return True
     else:
         print(
-            f'Сумма хи-квадрат {sum_xi} >= {criteries[keys[k+1]]} критерия, распределение не похоже на нормальное по критерию Пирсона (ГОСТ)'
+            f'Сумма хи-квадрат {sum_xi} >= {criteries[keys[k + 1]]} критерия, распределение не похоже на нормальное по критерию Пирсона (ГОСТ)'
         )
         return False
+
+
 def print_table(headers, rows):
     print(tabulate(rows, headers=headers, tablefmt="pretty"))
 
@@ -159,11 +162,16 @@ def find_midpoints(arrays):
 
 def find_excess_and_etc(content, S):
     excess = kurtosis(content) + 3
-    assimetry = skew(content)
+    moment_3rd = third_central_moment(content)
+    assimetry=moment_3rd/(S**3)
     mean = np.mean(content)
     contr_excess = 1 / (excess ** 0.5)
     return excess, contr_excess, assimetry
-
+def third_central_moment(sample):
+    n = len(sample)
+    mean = np.mean(sample)
+    m3 = np.sum((sample - mean) ** 3) / n
+    return m3
 
 def split_array_by_range(content: list, max_range):
     result = []
@@ -204,7 +212,8 @@ def others_check(sample_data, distributions_d, cexcess, mean):
     uniform_dist = uniform(loc=params_uniform[0], scale=params_uniform[1] - params_uniform[0])
     # Сравнение с равномерным распределением
     ks_stat_uniform, p_value_uniform = kstest(sample_data, uniform_dist.cdf)
-    print(f'Параметры теста Колмогорова-Смирнова на схожесть с равномерным распределением с масштабом(разницей максимального и минимального значений) {params_uniform[1] - params_uniform[0]}, смещением(минимумом) {np.min(sample_data)}:\nСтатистика = {ks_stat_uniform}, P_value = {p_value_uniform}')
+    print(
+        f'Параметры теста Колмогорова-Смирнова на схожесть с равномерным распределением с масштабом(разницей максимального и минимального значений) {params_uniform[1] - params_uniform[0]}, смещением(минимумом) {np.min(sample_data)}:\nСтатистика = {ks_stat_uniform}, P_value = {p_value_uniform}')
     if p_value_uniform > alpha:
         print(
             "Выборка похожа на равномерное распределение по критерию Колмогорова-Смирнова."
@@ -217,14 +226,16 @@ def others_check(sample_data, distributions_d, cexcess, mean):
         print(
             "Выборка не похожа на равномерное распределение по критерию Колмогорова-Смирнова."
         )
-
+    print("\n")
     # Сравнение с гамма распределением
     a, loc, scale = gamma.fit(sample_data)
     ks_stat_gamma, p_value_gamma = kstest(
         sample_data, gamma(a, loc=loc, scale=scale).cdf
     )
-    print(f'Сравнение с теоретическим гамма-распределением с параметрами формы {a}, сдвига {loc}, масштаба {scale}, определенными автоматически программой')
-    print(f'Параметры теста Колмогорова-Смирнова на схожесть с гамма-распределением:\nСтатистика = {ks_stat_gamma}, P_value = {p_value_gamma}')
+    print(
+        f'Сравнение с теоретическим гамма-распределением с параметрами формы {a}, сдвига {loc}, масштаба {scale}, определенными автоматически программой')
+    print(
+        f'Параметры теста Колмогорова-Смирнова на схожесть с гамма-распределением:\nСтатистика = {ks_stat_gamma}, P_value = {p_value_gamma}')
     if p_value_gamma > alpha:
         print("Выборка похожа на гамма-распределение по критерию Колмогорова-Смирнова.")
         print(
@@ -235,20 +246,26 @@ def others_check(sample_data, distributions_d, cexcess, mean):
         print(
             "Выборка не похожа на гамма-распределение по критерию Колмогорова-Смирнова."
         )
+    print("\n")
 
     # Сравнение с треугольным распределением
-    params_triangular = (
+    params_tri = (
         np.min(sample_data),
+        np.mean(sample_data),
         np.max(sample_data),
-        np.median(sample_data),
     )
+    '''triangular_dist = triang(
+        c=(params_tri[1] - params_tri[0]) / (params_tri[2] - params_tri[0]),
+        loc=loc_tri, scale=scale_tri)'''
+    center, loc_tri, scale_tri = triang.fit(sample_data)
     triangular_dist = triang(
-        c=(params_triangular[2] - params_triangular[0]) / (params_triangular[1] - params_triangular[0]),
-        loc=params_triangular[0], scale=params_triangular[1] - params_triangular[0])
-
-    ks_stat_tri, p_value_tri = kstest(sample_data, triangular_dist.cdf, )
-    print(f'Сравнение с теоретическим треугольным распределением с медианой {np.median(sample_data)}, масштабом(разница максимума и минимума) {params_triangular[1] - params_triangular[0]}, минимумом(смещением) {np.min(sample_data)},\nточкой максимума {(params_triangular[2] - params_triangular[0]) / (params_triangular[1] - params_triangular[0])} найденной как отношение разниц медианы и минимума к разнице максимума и минимума')
-    print(f'Параметры теста Колмогорова-Смирнова на схожесть с треугольным распределением:\nСтатистика = {ks_stat_tri}, P_value = {p_value_tri}')
+        c=center,
+        loc=loc_tri, scale=scale_tri)
+    ks_stat_tri, p_value_tri = kstest(sample_data, triangular_dist.cdf)
+    print(
+        f'Сравнение с теоретическим треугольным распределением с медианой {np.median(sample_data)}, масштабом(разница максимума и минимума) {np.max(content) - np.min(content)}, минимумом(смещением) {np.min(sample_data)},\nточкой максимума {(params_tri[1] - params_tri[0]) / (params_tri[2] - params_tri[0])} найденной как отношение разниц медианы и минимума к разнице максимума и минимума')
+    print(
+        f'Параметры теста Колмогорова-Смирнова на схожесть с треугольным распределением:\nСтатистика = {ks_stat_tri}, P_value = {p_value_tri}')
     if p_value_tri > alpha:
         print(
             "Выборка похожа на треугольное распределение по критерию Колмогорова-Смирнова."
@@ -261,6 +278,7 @@ def others_check(sample_data, distributions_d, cexcess, mean):
         print(
             "Выборка не похожа на треугольное распределение по критерию Колмогорова-Смирнова."
         )
+    print("\n")
 
     # Сравнение с лапласа распределением
     loc_laplace, scale_laplace = laplace.fit(sample_data)
@@ -268,7 +286,8 @@ def others_check(sample_data, distributions_d, cexcess, mean):
         sample_data, laplace(loc=loc_laplace, scale=scale_laplace).cdf
     )
     print(f'Сравнение с теоретическим лапласа распределением с сдвигом {loc_laplace}, маcштабом {scale_laplace}')
-    print(f'Параметры теста Колмогорова-Смирнова на схожесть с треугольным распределением:\nСтатистика = {ks_stat_laplace}, P_value = {p_value_laplace}')
+    print(
+        f'Параметры теста Колмогорова-Смирнова на схожесть с лапласа распределением:\nСтатистика = {ks_stat_laplace}, P_value = {p_value_laplace}')
     if p_value_laplace > alpha:
         print(
             "Выборка похожа на лапласовское распределение по критерию Колмогорова-Смирнова."
@@ -282,7 +301,7 @@ def others_check(sample_data, distributions_d, cexcess, mean):
             "Выборка не похожа на лапласовское распределение по критерию Колмогорова-Смирнова."
         )
 
-    plt.figure(figsize=(20, 14))
+    plt.figure(figsize=(17, 11))
 
     # Треугольное распределение
     params_tri = (
@@ -295,21 +314,24 @@ def others_check(sample_data, distributions_d, cexcess, mean):
         loc=params_tri[0],
         scale=params_tri[2] - params_tri[0],
     )
-    print(f'Параметры теоретического треугольного распределения, построенного на гистограмме поверх изучаемой выборки: точка максимума {(params_tri[1] - params_tri[0]) / (params_tri[2] - params_tri[0])}, берется как отношение разниц среднего к минимуму и максимума к минимуму, смещение(минимум) {params_tri[0]}, масштаб(разница максимума и минимума) {params_tri[2] - params_tri[0]}')
+    print(
+        f'Параметры теоретического треугольного распределения, построенного на гистограмме поверх изучаемой выборки: точка максимума {(params_tri[1] - params_tri[0]) / (params_tri[2] - params_tri[0])}, берется как отношение разниц\nсреднего к минимуму и максимума к минимуму, смещение(минимум) {params_tri[0]}, масштаб(разница максимума и минимума) {params_tri[2] - params_tri[0]}\n')
     # Лапласово распределение
     params_laplace = (
         np.mean(sample_data),
         np.std(sample_data),
     )  # Используем среднее и стандартное отклонение из выборки
     laplace_dist = laplace(*params_laplace)
-    print(f'Параметры теоретического лапласова распределения, построенного на гистограмме поверх изучаемой выборки: cреднее значение {np.mean(sample_data)}, СКО {np.std(sample_data)}')
+    print(
+        f'Параметры теоретического лапласова распределения, построенного на гистограмме поверх изучаемой выборки: cреднее значение {np.mean(sample_data)}, СКО {np.std(sample_data)}\n')
 
     # Равномерное распределение
     params_uniform = (
         np.min(sample_data),
         np.max(sample_data),
     )  # Используем минимум и максимум из выборки
-    print(f'Параметры теоретического равномерного распределения, построенного на гистограмме поверх изучаемой выборки: смещение { np.min(sample_data)}, масштаб(разница максимального с минимальным) {params_uniform[1] - params_uniform[0]}')
+    print(
+        f'Параметры теоретического равномерного распределения, построенного на гистограмме поверх изучаемой выборки: смещение {np.min(sample_data)}, масштаб(разница максимального с минимальным) {params_uniform[1] - params_uniform[0]}\n')
     uniform_dist = uniform(
         loc=params_uniform[0], scale=params_uniform[1] - params_uniform[0]
     )
@@ -318,7 +340,8 @@ def others_check(sample_data, distributions_d, cexcess, mean):
         np.mean(sample_data),
         np.std(sample_data),
     )  # Используем среднее и стандартное отклонение из выборки
-    print(f'Параметры теоретического гамма распределения, построенного на гистограмме поверх изучаемой выборки: форма {params_gamma[0] ** 2 / params_gamma[1] ** 2} считается как отношение квадратов среднего и СКО,\nмасштаб {params_gamma[1] ** 2 / params_gamma[0]}, считается как отношение квадрата СКО к среднему')
+    print(
+        f'Параметры теоретического гамма распределения, построенного на гистограмме поверх изучаемой выборки: форма {params_gamma[0] ** 2 / params_gamma[1] ** 2} считается как отношение квадратов среднего и СКО,\nмасштаб {params_gamma[1] ** 2 / params_gamma[0]}, считается как отношение квадрата СКО к среднему\n')
     gamma_dist = gamma(
         a=params_gamma[0] ** 2 / params_gamma[1] ** 2,
         scale=params_gamma[1] ** 2 / params_gamma[0],
@@ -458,28 +481,30 @@ def calculate_confidence_interval(mean, sample, distribution, alpha=0.05):
     if distribution == "laplace":
         median_sample = np.median(sample)
         # Вычисляем квантиль лапласовского распределения
-        a, loc_laplace, scale_laplace = laplace.fit(sample)
-        q_laplace = laplace.ppf(1 - alpha / 2,loc=loc_laplace, scale=scale_laplace)
+        loc_laplace, scale_laplace = laplace.fit(sample)
+        q_laplace = laplace.ppf(1 - alpha / 2, loc=loc_laplace, scale=scale_laplace)
         # Вычисляем погрешность, убеждаясь, что делитель не равен нулю
         n = len(sample)
         scale_laplace = median_sample, np.mean(np.abs(sample - median_sample))
         margin_of_error_laplace = q_laplace * (
             scale_laplace[0] / np.sqrt(n) if n > 0 else 1
         )
-        print(f'Квантиль равен {q_laplace} для теоретического лапласовского распределения со смещением {loc_laplace} и масштабом {scale_laplace}.\nПогрешность считается как произведение квантиля на отношение медианы выборки {scale_laplace[0]} к корню размера выборки {np.sqrt(n)}')
+        print(
+            f'Квантиль равен {q_laplace} для теоретического лапласовского распределения со смещением {loc_laplace} и масштабом {scale_laplace}.\nПогрешность считается как произведение квантиля на отношение медианы выборки {scale_laplace[0]} к корню размера выборки {np.sqrt(n)}')
         print(
             f"Измеренное значение = {round(mean, 6)} +- {round(margin_of_error_laplace, 6)},\nпогрешность посчитана по квантилю лапласовского распределения\n"
         )
 
     elif distribution == "uniform":
         min_val, max_val = np.min(sample), np.max(sample)
-        a, loc_uni, scale_uni = uniform.fit(sample)
+        loc_uni, scale_uni = uniform.fit(sample)
         # Вычисляем квантиль равномерного распределения
         q_uniform = uniform.ppf(1 - alpha / 2, loc=loc_uni, scale=scale_uni)
         margin_of_error_uniform = (
                 q_uniform * (max_val - min_val) / (2 * np.sqrt(3) * np.sqrt(len(sample)))
         )
-        print(f'Квантиль равен {q_uniform}, считается как квантиль для теоретического равномерного распределения с параметами\nформы {a},смещения {loc_uni}, масштаба {scale_uni}, определенными программой автоматически из данной выборки.\nПогрешность считается как произведение квантиля на отношение разницы максимума и минимума выборки {max_val - min_val} к удвоенному корню из трех помноженному на квадратный корень размера выборки {np.sqrt(len(sample))}')
+        print(
+            f'Квантиль равен {q_uniform}, считается как квантиль для теоретического равномерного распределения с параметами\nсмещения {loc_uni}, масштаба {scale_uni}, определенными программой автоматически из данной выборки.\nПогрешность считается как произведение квантиля на отношение разницы максимума и минимума выборки {max_val - min_val} к удвоенному корню из трех помноженному на квадратный корень размера выборки {np.sqrt(len(sample))}')
         print(
             f"Измеренное значение = {round(mean, 6)} +- {round(margin_of_error_uniform, 6)},\nпогрешность посчитана по квантилю равномерного распределения\n"
         )
@@ -493,9 +518,10 @@ def calculate_confidence_interval(mean, sample, distribution, alpha=0.05):
         scale_tri = (np.max(sample) - np.min(sample)) / np.sqrt(6)
         q_triangular = triang.ppf(1 - alpha / 2, c=normalized_peak_location, scale=scale_tri, loc=loc_tri)
         margin_of_error_tri = q_triangular * (scale_tri / np.sqrt(len(sample)))
-        print(f'Квантиль равен {q_triangular}, считается как квантиль теоретического треугольного распределения с пиком находящимся {normalized_peak_location}, параметами смещения {loc_tri}, масштабом {scale_tri}\n определенными программой автоматически по данным изучаемой выборки.\nМасштаб выборки по треугольному распределению равна отношению между разницей максимального и минимального отношения деленных на корень из 6 = {scale_tri},\n погрешность считается как произведение квантиля на отношение дисперсии выборки к корню ее размера ({np.sqrt(len(sample))})')
         print(
-            f"Измеренное значение = {round(mean, 6)} +- {round(margin_of_error_tri, 6)},\nпогрешность посчитана по квантилю равномерного распределения\n"
+            f'Квантиль равен {q_triangular}, считается как квантиль теоретического треугольного распределения с пиком находящимся {normalized_peak_location}, параметами смещения {loc_tri}, масштабом {scale_tri}\n определенными программой автоматически по данным изучаемой выборки.\nМасштаб выборки по треугольному распределению равна отношению между разницей максимального и минимального отношения деленных на корень из 6 = {scale_tri},\n погрешность считается как произведение квантиля на отношение дисперсии выборки к корню ее размера ({np.sqrt(len(sample))})')
+        print(
+            f"Измеренное значение = {round(mean, 6)} +- {round(margin_of_error_tri, 6)},\nпогрешность посчитана по квантилю треугольного распределения\n"
         )
 
     elif distribution == "gamma":
@@ -503,7 +529,8 @@ def calculate_confidence_interval(mean, sample, distribution, alpha=0.05):
         # Вычисляем квантиль гамма распределения
         q_gamma = gamma.ppf(1 - alpha / 2, a_gamma, loc=loc_gamma, scale=scale_gamma)
         margin_of_error_gamma = q_gamma - loc_gamma
-        print(f'Квантиль равен {q_gamma}, считается как квантиль теоретического гамма-распределения с параметами\nформы {a_gamma},смещения {loc_gamma}, масштаба {scale_gamma} определенными программой автоматически по данным изучаемой выборки.\nПогрешность считается как произведение квантиля на отношение дисперсии выборки к корню ее размера ({np.sqrt(len(sample))})')
+        print(
+            f'Квантиль равен {q_gamma}, считается как квантиль теоретического гамма-распределения с параметами\nформы {a_gamma},смещения {loc_gamma}, масштаба {scale_gamma} определенными программой автоматически по данным изучаемой выборки.\nПогрешность считается как произведение квантиля на отношение дисперсии выборки к корню ее размера ({np.sqrt(len(sample))})')
 
         print(
             f"Измеренное значение = {round(mean, 6)} +- {round(margin_of_error_gamma, 6)},\nпогрешность посчитана по квантилю равномерного распределения\n"
@@ -540,7 +567,9 @@ def find_closest_distribution(variable, distribution_dict):
 
 if __name__ == "__main__":
 
-    content = read_chosen_nums("input")
+    content=read_chosen_nums('input')
+    print(
+        "Уровень значимости равен 0.05 или 5%. Все критерии и сравнение по тесту Колмогорова-Смирнова проводится по сравнению с данной величиной")
     grubbs_criteries = read_table("граббс")
     number_of_freedoms = len(content) - 1
     print(f"Размер выборки: {len(content)}")
@@ -576,16 +605,17 @@ if __name__ == "__main__":
         normal2 = normality_check(content)
         if normal2 and normal1:
             print("Cоставной критерий нормальности по ГОСТ и критерий Колмогорова-Смирнова на нормальность пройдены")
-        normal = normal1 or normal2
+        normal = normal1
     elif len(content) > 50:
         xi_crit = read_table("хиКритерии")
         normal1 = check_normality_big_nums(content, S, mean, xi_crit)
         normal2 = normality_check(content)
         if normal2 and normal1:
             print("Критерии хи-квадрат и Колмогорова-Смирнова на нормальность пройдены")
-        normal = normal1 or normal2
+        normal = normal1
     else:
-        print("Выборка слишком малого размера, проверка на нормальность по ГОСТ не предполагается, проверим исключительно по критерию Колмогорова-Смирнова")
+        print(
+            "Выборка слишком малого размера, проверка на нормальность по ГОСТ не предполагается, проверим исключительно по критерию Колмогорова-Смирнова")
         normal = normality_check(content)
     normality_graphs(content)
     t_student = read_table("СтьюдентГОСТ")
@@ -598,6 +628,7 @@ if __name__ == "__main__":
     print(f"Эксцесс: {excess}")
     print(f"Контрэксцесс: {contr_excess}")
     print(f"Ассиметрия: {assimetry}")
+
     distribution_dict = {
         0.408: "Лапласово",
         0.577: "Нормальное",
@@ -614,6 +645,7 @@ if __name__ == "__main__":
         f"{closest_distribution} распределение."
     )
     if not normal:
+        print("Так как проверка на нормальность по ГОСТ не пройдена, сравним с другими распределениями")
         others_check(content, flipped_dict, contr_excess, mean)
         print(
             f"Вывод погрешности, посчитанной не по индивидуальному квантилю распределения:\nИзмеренное значение величины равно {round(mean, 6)} +- {round(trust_borders_meas, 6)}, P=0.05"
