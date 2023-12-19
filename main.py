@@ -540,16 +540,7 @@ def find_closest_distribution(variable, distribution_dict):
 
 if __name__ == "__main__":
 
-    #content = read_chosen_nums("input")
-    mu = np.random.uniform(7.326, 7.428)
-    sigma = np.random.uniform(0.0005,0.002)
-    content = np.random.normal(mu, sigma,43)
-    file_name = "random_normal_sample_small.txt"
-    # Записываем выборку в текстовый файл
-    with open(file_name, "w") as file:
-        for value in content:
-            file.write(str(value) + "\n")
-
+    content = read_chosen_nums("input")
     grubbs_criteries = read_table("граббс")
     number_of_freedoms = len(content) - 1
     print(f"Размер выборки: {len(content)}")
