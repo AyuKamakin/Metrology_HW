@@ -541,9 +541,15 @@ def find_closest_distribution(variable, distribution_dict):
 if __name__ == "__main__":
 
     #content = read_chosen_nums("input")
-    mu = np.random.uniform(4.666, 4.688)
+    mu = np.random.uniform(7.326, 7.428)
     sigma = np.random.uniform(0.0005,0.002)
-    content = np.random.normal(mu, sigma, 43)
+    content = np.random.normal(mu, sigma,43)
+    file_name = "random_normal_sample_small.txt"
+    # Записываем выборку в текстовый файл
+    with open(file_name, "w") as file:
+        for value in content:
+            file.write(str(value) + "\n")
+
     grubbs_criteries = read_table("граббс")
     number_of_freedoms = len(content) - 1
     print(f"Размер выборки: {len(content)}")
@@ -571,11 +577,15 @@ if __name__ == "__main__":
         if check_d_critery(content, mean, d_criteries) and check_second_critery(
                 content, S, p_criteries, z_criterie
         ):
-            normal = True
+            normal1 = True
             print("Распределение принадлежит нормальному по составному критерию ГОСТ")
         else:
-            normal = False
+            normal1 = False
             print("Распределение не принадлежит нормальному по составному критерию ГОСТ")
+        normal2 = normality_check(content)
+        if normal2 and normal1:
+            print("Cоставной критерий нормальности по ГОСТ и критерий Колмогорова-Смирнова на нормальность пройдены")
+        normal = normal1 or normal2
     elif len(content) > 50:
         xi_crit = read_table("хиКритерии")
         normal1 = check_normality_big_nums(content, S, mean, xi_crit)
