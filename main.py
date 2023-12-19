@@ -540,7 +540,10 @@ def find_closest_distribution(variable, distribution_dict):
 
 if __name__ == "__main__":
 
-    content = read_chosen_nums("input")
+    #content = read_chosen_nums("input")
+    mu = np.random.uniform(4.666, 4.688)
+    sigma = np.random.uniform(0.0005,0.002)
+    content = np.random.normal(mu, sigma, 43)
     grubbs_criteries = read_table("граббс")
     number_of_freedoms = len(content) - 1
     print(f"Размер выборки: {len(content)}")
@@ -569,10 +572,10 @@ if __name__ == "__main__":
                 content, S, p_criteries, z_criterie
         ):
             normal = True
-            print("Распределение принадлежит нормальному")
+            print("Распределение принадлежит нормальному по составному критерию ГОСТ")
         else:
             normal = False
-            print("Распределение не принадлежит нормальному")
+            print("Распределение не принадлежит нормальному по составному критерию ГОСТ")
     elif len(content) > 50:
         xi_crit = read_table("хиКритерии")
         normal1 = check_normality_big_nums(content, S, mean, xi_crit)
