@@ -1,33 +1,32 @@
-# Лабораторная работа: Обработка статистических выборок по ГОСТ 8.736-2011
+# Lab Work: Statistical Sample Analysis According to GOST 8.736-2011
 
+## Description
+This work was completed as part of the "Metrology" course in the Bachelor's program at HSE University. The project implements statistical sample analysis in accordance with GOST 8.736-2011 using Python. The work includes:
 
-## Описание
-Работа выполнена в рамках курса "Метрология" при обучении бакалавриата в НИУ ВШЭ. В данной работе реализован анализ статистических выборок в соответствии с ГОСТ 8.736-2011 с использованием Python. Работа включает:
+- Calculation of mean, standard deviation, and standard error of the mean.
+- Detection of gross errors using the Grubbs test.
+- Testing the normality of the sample distribution (χ² test, Kolmogorov–Smirnov test).
+- Calculation of confidence intervals for measurements.
+- Assessment of skewness, kurtosis, and counter-kurtosis.
+- Calculation of overall mean and overall standard deviation according to GOST.
+- Visualization of data and statistical characteristics.
 
-- Расчёт среднего значения, среднеквадратического отклонения и стандартной ошибки среднего.
-- Проверку на грубые погрешности с использованием критерия Граббса.
-- Проверку нормальности распределения выборки (χ², Колмогорова–Смирнова).
-- Вычисление доверительных границ для измерений.
-- Оценку асимметрии, эксцесса и контрэксцесса.
-- Расчёт суммарного среднего и суммарного стандартного отклонения по ГОСТ.
-- Визуализацию данных и статистических характеристик.
+## Libraries Used
+- `pandas` — for working with tables and data.
+- `numpy` — for numerical calculations.
+- `scipy` — for statistical tests and distribution functions.
+- `tabulate` — for console table output.
+- `matplotlib` and `seaborn` — for plotting and data visualization.
 
-## Используемые библиотеки
-- `pandas` — работа с таблицами и данными.
-- `numpy` — численные расчёты.
-- `scipy` — статистические тесты и функции распределения.
-- `tabulate` — вывод таблиц в консоль.
-- `matplotlib` и `seaborn` — графики и визуализация данных.
-
-## Установка
-1. Установите Python версии 3.10 или выше.
-2. Установите необходимые библиотеки:
+## Installation
+1. Install Python version 3.10 or higher.
+2. Install required libraries:
 ```bash
 pip install pandas numpy scipy tabulate matplotlib seaborn
 ```
 
-## Подготовка данных
-Данные должны быть в текстовом файле `.txt` с одним столбцом числовых значений измерений. Например:
+## Data Preparation
+Data should be in a `.txt` file with a single column of numerical measurements. Example:
 ```
 12.3
 13.5
@@ -36,37 +35,40 @@ pip install pandas numpy scipy tabulate matplotlib seaborn
 ...
 ```
 
-## Запуск
-Пример запуска анализа для файла `data.txt`:
+## Running the Analysis
+Example command to run the analysis for `data.txt`:
 ```bash
 python analysis.py --input data.txt
 ```
 
-После выполнения скрипт выведет:
+The script will output:
+- Mean and standard deviation of the sample.
+- Detection of outliers (Grubbs test).
+- Normality tests.
+- Confidence intervals and statistical characteristics (skewness, kurtosis).
+- Distribution plots.
 
-- Среднее значение и стандартное отклонение выборки.
-- Проверку на выбросы (критерий Граббса).
-- Проверку нормальности распределения.
-- Доверительные границы и статистические характеристики (асимметрия, эксцесс).
-- Графики распределения данных.
-
-## Теоретические основы
-- **Среднее значение выборки:**
-\[
+## Theoretical Background
+- **Sample mean:**
+```math
 \bar{x} = \frac{1}{n} \sum_{i=1}^{n} x_i
-\]
-- **Среднеквадратическое отклонение:**
-\[
-s = \sqrt{\frac{1}{n-1} \sum_{i=1}^{n} (x_i - \bar{x})^2}
-\]
-- **Стандартная ошибка среднего:**
-\[
-\sigma_{\bar{x}} = \frac{s}{\sqrt{n}}
-\]
-- **Критерий Граббса:** выявление грубых погрешностей.
-- **Критерии нормальности:** χ², Колмогорова–Смирнова.
-- **Доверительные границы:** рассчитываются в соответствии с ГОСТ 8.736-2011.
+```
 
-## Результаты
-- Таблицы характеристик выборки.
-- Графики распределения и доверительных интервалов.
+- **Sample standard deviation:**
+```math
+s = \sqrt{\frac{1}{n-1} \sum_{i=1}^{n} (x_i - \bar{x})^2}
+```
+
+- **Standard error of the mean:**
+```math
+\sigma_{\bar{x}} = \frac{s}{\sqrt{n}}
+```
+
+- **Grubbs test:** Detection of gross errors.
+- **Normality tests:** χ² and Kolmogorov–Smirnov tests.
+- **Confidence intervals:** Calculated according to GOST 8.736-2011.
+
+## Results
+- Tables of sample characteristics.
+- Plots of distributions and confidence intervals.
+
