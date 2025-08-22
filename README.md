@@ -73,12 +73,9 @@ s = \sqrt{\frac{1}{n-1} \sum_{i=1}^{n} (x_i - \bar{x})^2}
 - Plots of distributions and confidence intervals.
 
 ### Examples
-![Example Distribution Plot](images/distribution_plot.png)
-*Figure 1: Distribution of sample data with mean and confidence intervals.*
+![Figure 1](images/normal_distribution_example.png)
+*Figure 1: Histogram and Q-Q plot comparison of the sample distribution with the normal distribution.*
 
 ### Example 2
-![Example Boxplot](images/boxplot.png)
-*Figure 2: Boxplot showing outliers detected by Grubbs test.*
-
-> To add your own images, place them in an `images` folder in the repository and reference them using the Markdown syntax above.
-
+![Figure 2](images/other_dist_examples.png)
+*Figure 2: Histogram and quantile comparison of the sample distribution with other distributions.*
