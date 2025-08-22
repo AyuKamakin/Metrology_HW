@@ -74,8 +74,8 @@ s = \sqrt{\frac{1}{n-1} \sum_{i=1}^{n} (x_i - \bar{x})^2}
 
 ### Examples
 ![Figure 1](images/normal_distribution_example.png)
-*Figure 1: Histogram and Q-Q plot comparison of the sample distribution with the normal distribution.*
+<br>*Figure 1: Histogram and Q-Q plot comparison of the sample distribution with the normal distribution.*
 
 ### Example 2
 ![Figure 2](images/other_dist_examples.png)
-*Figure 2: Histogram and quantile comparison of the sample distribution with other distributions.*
+<br>*Figure 2: Histogram and quantile comparison of the sample distribution with other distributions.*
